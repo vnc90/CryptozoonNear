@@ -45,9 +45,9 @@ class Zoan {
 class Contract {
   owner_id: AccountId;
   zoan_id: number;
-  owner_by_id: LookupMap; //data zoan on account
-  zoan_by_id: LookupMap; //data of Zoans
-  approved_account_ids : LookupMap
+  owner_by_id: LookupMap<string>; //data zoan on account
+  zoan_by_id: LookupMap<Zoan>; //data of Zoans
+  approved_account_ids : LookupMap<string>
   total_supply_zoan : number;
 
   constructor() {
@@ -122,18 +122,18 @@ class Contract {
     }
 
   }
-  @call({})
-  nft_revoke({account_id, zoan_id}: {account_id:string, zoan_id :number}){
-    this.approved_account_ids.remove(zoan_id.toString(),account_id);
-  }
-  //transfer
-  @call({})
-  nft_transfer({receiver_id, zoan_id}: {receiver_id:string, zoan_id :number}){
-    if(this.nft_is_approved(zoan_id,receiver_id)){
-      this.owner_by_id.remove(zoan_id.toString(),receiver_id)
-      //@todo set lookup
-    }
-  }
+  // @call({})
+  // nft_revoke({account_id, zoan_id}: {account_id:string, zoan_id :number}){
+  //   this.approved_account_ids.remove(zoan_id.toString(),account_id);
+  // }
+  // //transfer
+  // @call({})
+  // nft_transfer({receiver_id, zoan_id}: {receiver_id:string, zoan_id :number}){
+  //   if(this.nft_is_approved(zoan_id,)){
+  //     this.owner_by_id.remove(zoan_id.toString(),receiver_id)
+  //     //@todo set lookup
+  //   }
+  // }
   @view({})
   get_total_zoan() {
     return this.zoan_id;

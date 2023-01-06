@@ -33,6 +33,25 @@ var TypeBrand;
   TypeBrand["BIGINT"] = "bigint";
   TypeBrand["DATE"] = "date";
 })(TypeBrand || (TypeBrand = {}));
+function getValueWithOptions(value, options = {
+  deserializer: deserialize
+}) {
+  const deserialized = deserialize(value);
+  if (deserialized === undefined || deserialized === null) {
+    return options?.defaultValue ?? null;
+  }
+  if (options?.reconstructor) {
+    return options.reconstructor(deserialized);
+  }
+  return deserialized;
+}
+function serializeValueWithOptions(value, {
+  serializer
+} = {
+  serializer: serialize
+}) {
+  return serializer(value);
+}
 function serialize(valueToSerialize) {
   return JSON.stringify(valueToSerialize, function (key, value) {
     if (typeof value === "bigint") {
@@ -442,6 +461,20 @@ function storageRead(key) {
   return env.read_register(0);
 }
 /**
+ * Checks for the existance of a value under the provided key in NEAR storage.
+ *
+ * @param key - The key to check for in storage.
+ */
+function storageHasKey(key) {
+  return env.storage_has_key(key) === 1n;
+}
+/**
+ * Get the last written or removed value from NEAR storage.
+ */
+function storageGetEvicted() {
+  return env.read_register(EVICTED_REGISTER);
+}
+/**
  * Writes the provided bytes to NEAR storage under the provided key.
  *
  * @param key - The key under which to store the value.
@@ -449,6 +482,14 @@ function storageRead(key) {
  */
 function storageWrite(key, value) {
   return env.storage_write(key, value, EVICTED_REGISTER) === 1n;
+}
+/**
+ * Removes the value of the provided key from NEAR storage.
+ *
+ * @param key - The key to be removed.
+ */
+function storageRemove(key) {
+  return env.storage_remove(key, EVICTED_REGISTER) === 1n;
 }
 /**
  * Returns the arguments passed to the current smart contract call.
@@ -544,41 +585,193 @@ function NearBindgen({
   };
 }
 
-var _dec, _dec2, _dec3, _dec4, _class, _class2;
-class Token {
-  constructor(token_id, owner_id, name, description, media_uri, level) {
-    this.token_id = token_id, this.owner_id = owner_id, this.name = name, this.description = description, this.media_uri = media_uri, this.level = level;
+/**
+ * A lookup map that stores data in NEAR storage.
+ */
+class LookupMap {
+  /**
+   * @param keyPrefix - The byte prefix to use when storing elements inside this collection.
+   */
+  constructor(keyPrefix) {
+    this.keyPrefix = keyPrefix;
+  }
+  /**
+   * Checks whether the collection contains the value.
+   *
+   * @param key - The value for which to check the presence.
+   */
+  containsKey(key) {
+    const storageKey = this.keyPrefix + key;
+    return storageHasKey(storageKey);
+  }
+  /**
+   * Get the data stored at the provided key.
+   *
+   * @param key - The key at which to look for the data.
+   * @param options - Options for retrieving the data.
+   */
+  get(key, options) {
+    const storageKey = this.keyPrefix + key;
+    const value = storageRead(storageKey);
+    return getValueWithOptions(value, options);
+  }
+  /**
+   * Removes and retrieves the element with the provided key.
+   *
+   * @param key - The key at which to remove data.
+   * @param options - Options for retrieving the data.
+   */
+  remove(key, options) {
+    const storageKey = this.keyPrefix + key;
+    if (!storageRemove(storageKey)) {
+      return options?.defaultValue ?? null;
+    }
+    const value = storageGetEvicted();
+    return getValueWithOptions(value, options);
+  }
+  /**
+   * Store a new value at the provided key.
+   *
+   * @param key - The key at which to store in the collection.
+   * @param newValue - The value to store in the collection.
+   * @param options - Options for retrieving and storing the data.
+   */
+  set(key, newValue, options) {
+    const storageKey = this.keyPrefix + key;
+    const storageValue = serializeValueWithOptions(newValue, options);
+    if (!storageWrite(storageKey, storageValue)) {
+      return options?.defaultValue ?? null;
+    }
+    const value = storageGetEvicted();
+    return getValueWithOptions(value, options);
+  }
+  /**
+   * Extends the current collection with the passed in array of key-value pairs.
+   *
+   * @param keyValuePairs - The key-value pairs to extend the collection with.
+   * @param options - Options for storing the data.
+   */
+  extend(keyValuePairs, options) {
+    for (const [key, value] of keyValuePairs) {
+      this.set(key, value, options);
+    }
+  }
+  /**
+   * Serialize the collection.
+   *
+   * @param options - Options for storing the data.
+   */
+  serialize(options) {
+    return serializeValueWithOptions(this, options);
+  }
+  /**
+   * Converts the deserialized data from storage to a JavaScript instance of the collection.
+   *
+   * @param data - The deserialized data to create an instance from.
+   */
+  static reconstruct(data) {
+    return new LookupMap(data.keyPrefix);
   }
 }
-let Contract = (_dec = NearBindgen({}), _dec2 = initialize(), _dec3 = call({}), _dec4 = view(), _dec(_class = (_class2 = class Contract {
+
+var _dec, _dec2, _dec3, _dec4, _dec5, _dec6, _dec7, _dec8, _class, _class2;
+// Zoan is a NFT for game play
+class Zoan {
+  constructor(zoan_id, owner_id, name, rare, tribe, exp, media_uri, level) {
+    this.zoan_id = zoan_id, this.owner_id = owner_id, this.name = name, this.rare = rare, this.tribe = tribe, this.exp = exp, this.media_uri = media_uri, this.level = level;
+  }
+}
+let Contract = (_dec = NearBindgen({}), _dec2 = initialize(), _dec3 = call({}), _dec4 = call({}), _dec5 = view(), _dec6 = view(), _dec7 = view(), _dec8 = view(), _dec(_class = (_class2 = class Contract {
+  //data zoan on account
+  //data of Zoans
+
   constructor() {
-    this.token_id = 0;
+    this.zoan_id = 0;
     this.owner_id = "";
+    this.total_supply_zoan = 200000;
+    this.owner_by_id = new LookupMap("owner_by_id");
+    this.zoan_by_id = new LookupMap("zoan_by_id");
+    this.approved_account_ids = new LookupMap("approved_account_ids");
   }
   init({
     owner_id,
-    prefix
+    total_supply_zoan
   }) {
-    this.token_id = 0;
+    this.zoan_id = 0;
     this.owner_id = owner_id;
+    this.total_supply_zoan = total_supply_zoan;
   }
-  // token_id = 0
-  mint_nft({
-    token_owner_id,
-    name,
-    description,
-    media_uri,
-    level
+  // zoan_id = 0
+  mint_zoan({
+    zoan_owner_id
   }) {
-    let token = new Token(this.token_id, token_owner_id, name, description, media_uri, level);
-    this.token_id++;
-    return token;
+    //@todo get random rare, tribe for make a NFT
+    this.owner_by_id.set(this.zoan_id.toString(), zoan_owner_id);
+    let rare = 2; // must random 1 ~ 6 
+    let tribe = "Skyler"; // must random in Skyler, Hydrein, Plasmer,Stonic  ,
+    let name = "Zoan"; // must random follow rare and tribe
+    let media_uri = "http://"; // followed by name
+
+    let zoan = new Zoan(this.zoan_id, zoan_owner_id, name, rare, tribe, 0,
+    //exp = 0
+    media_uri, 0) // level = 0
+    ;
+
+    this.zoan_by_id.set(this.zoan_id.toString(), zoan); // save zoan to dataZoan
+
+    this.zoan_id++;
+    return zoan;
   }
-  get_supply_tokens() {
-    return this.token_id;
+  nft_approve({
+    zoan_id,
+    account_id
+  }) {
+    this.approved_account_ids.set(zoan_id.toString(), account_id);
   }
-}, (_applyDecoratedDescriptor(_class2.prototype, "init", [_dec2], Object.getOwnPropertyDescriptor(_class2.prototype, "init"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "mint_nft", [_dec3], Object.getOwnPropertyDescriptor(_class2.prototype, "mint_nft"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_supply_tokens", [_dec4], Object.getOwnPropertyDescriptor(_class2.prototype, "get_supply_tokens"), _class2.prototype)), _class2)) || _class);
-function get_supply_tokens() {
+  nft_token({
+    zoan_id
+  }) {
+    let aproved_id = this.approved_account_ids.get(zoan_id.toString());
+    let owner_id = this.owner_by_id.get(zoan_id.toString());
+    return {
+      "token_id": zoan_id.toString(),
+      "owner_id": owner_id,
+      "approved_account_ids": {
+        aproved_id
+      }
+    };
+  }
+  nft_is_approved({
+    zoan_id,
+    approved_account_id
+  }) {
+    let approved_account_id_get = this.approved_account_ids.get(zoan_id.toString());
+    if (approved_account_id_get == approved_account_id) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  // @call({})
+  // nft_revoke({account_id, zoan_id}: {account_id:string, zoan_id :number}){
+  //   this.approved_account_ids.remove(zoan_id.toString(),account_id);
+  // }
+  // //transfer
+  // @call({})
+  // nft_transfer({receiver_id, zoan_id}: {receiver_id:string, zoan_id :number}){
+  //   if(this.nft_is_approved(zoan_id,)){
+  //     this.owner_by_id.remove(zoan_id.toString(),receiver_id)
+  //     //@todo set lookup
+  //   }
+  // }
+  get_total_zoan() {
+    return this.zoan_id;
+  }
+  get_total_supply_zoan() {
+    return this.total_supply_zoan;
+  }
+}, (_applyDecoratedDescriptor(_class2.prototype, "init", [_dec2], Object.getOwnPropertyDescriptor(_class2.prototype, "init"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "mint_zoan", [_dec3], Object.getOwnPropertyDescriptor(_class2.prototype, "mint_zoan"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "nft_approve", [_dec4], Object.getOwnPropertyDescriptor(_class2.prototype, "nft_approve"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "nft_token", [_dec5], Object.getOwnPropertyDescriptor(_class2.prototype, "nft_token"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "nft_is_approved", [_dec6], Object.getOwnPropertyDescriptor(_class2.prototype, "nft_is_approved"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_total_zoan", [_dec7], Object.getOwnPropertyDescriptor(_class2.prototype, "get_total_zoan"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_total_supply_zoan", [_dec8], Object.getOwnPropertyDescriptor(_class2.prototype, "get_total_supply_zoan"), _class2.prototype)), _class2)) || _class);
+function get_total_supply_zoan() {
   const _state = Contract._getState();
   if (!_state && Contract._requireInit()) {
     throw new Error("Contract must be initialized");
@@ -588,10 +781,10 @@ function get_supply_tokens() {
     Contract._reconstruct(_contract, _state);
   }
   const _args = Contract._getArgs();
-  const _result = _contract.get_supply_tokens(_args);
+  const _result = _contract.get_total_supply_zoan(_args);
   if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(Contract._serialize(_result, true));
 }
-function mint_nft() {
+function get_total_zoan() {
   const _state = Contract._getState();
   if (!_state && Contract._requireInit()) {
     throw new Error("Contract must be initialized");
@@ -601,7 +794,60 @@ function mint_nft() {
     Contract._reconstruct(_contract, _state);
   }
   const _args = Contract._getArgs();
-  const _result = _contract.mint_nft(_args);
+  const _result = _contract.get_total_zoan(_args);
+  if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(Contract._serialize(_result, true));
+}
+function nft_is_approved() {
+  const _state = Contract._getState();
+  if (!_state && Contract._requireInit()) {
+    throw new Error("Contract must be initialized");
+  }
+  const _contract = Contract._create();
+  if (_state) {
+    Contract._reconstruct(_contract, _state);
+  }
+  const _args = Contract._getArgs();
+  const _result = _contract.nft_is_approved(_args);
+  if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(Contract._serialize(_result, true));
+}
+function nft_token() {
+  const _state = Contract._getState();
+  if (!_state && Contract._requireInit()) {
+    throw new Error("Contract must be initialized");
+  }
+  const _contract = Contract._create();
+  if (_state) {
+    Contract._reconstruct(_contract, _state);
+  }
+  const _args = Contract._getArgs();
+  const _result = _contract.nft_token(_args);
+  if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(Contract._serialize(_result, true));
+}
+function nft_approve() {
+  const _state = Contract._getState();
+  if (!_state && Contract._requireInit()) {
+    throw new Error("Contract must be initialized");
+  }
+  const _contract = Contract._create();
+  if (_state) {
+    Contract._reconstruct(_contract, _state);
+  }
+  const _args = Contract._getArgs();
+  const _result = _contract.nft_approve(_args);
+  Contract._saveToStorage(_contract);
+  if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(Contract._serialize(_result, true));
+}
+function mint_zoan() {
+  const _state = Contract._getState();
+  if (!_state && Contract._requireInit()) {
+    throw new Error("Contract must be initialized");
+  }
+  const _contract = Contract._create();
+  if (_state) {
+    Contract._reconstruct(_contract, _state);
+  }
+  const _args = Contract._getArgs();
+  const _result = _contract.mint_zoan(_args);
   Contract._saveToStorage(_contract);
   if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(Contract._serialize(_result, true));
 }
@@ -617,5 +863,5 @@ function init() {
   if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(Contract._serialize(_result, true));
 }
 
-export { get_supply_tokens, init, mint_nft };
+export { get_total_supply_zoan, get_total_zoan, init, mint_zoan, nft_approve, nft_is_approved, nft_token };
 //# sourceMappingURL=CryptoZoonNear.js.map
