@@ -113,7 +113,7 @@ class Contract {
   }
 
   @view({})
-  nft_is_approved({zoan_id, approved_account_id}: {zoan_id : number,approved_account_id:string }){
+  nft_is_approved({zoan_id, approved_account_id}: {zoan_id : number,approved_account_id: AccountId }){
     let approved_account_id_get = this.approved_account_ids.get(zoan_id.toString());
     if(approved_account_id_get == approved_account_id){
       return true;
@@ -123,7 +123,7 @@ class Contract {
 
   }
   // @call({})
-  // nft_revoke({account_id, zoan_id}: {account_id:string, zoan_id :number}){
+  // nft_revoke({account_id, zoan_id}: {account_id: AccountId, zoan_id :number}){
   //   this.approved_account_ids.remove(zoan_id.toString(),account_id);
   // }
   // //transfer
