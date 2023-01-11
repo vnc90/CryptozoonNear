@@ -9,10 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@next/font": "13.1.1",
-    "next": "13.1.1",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
+    "@near-wallet-selector/coin98-wallet": "^7.4.0",
     "@near-wallet-selector/core": "^7.0.0",
     "@near-wallet-selector/ledger": "^7.0.0",
     "@near-wallet-selector/math-wallet": "^7.0.0",
@@ -23,6 +20,10 @@
     "@near-wallet-selector/nightly": "^7.0.0",
     "@near-wallet-selector/nightly-connect": "^7.0.0",
     "@near-wallet-selector/sender": "^7.0.0",
-    "@near-wallet-selector/wallet-connect": "^7.0.0"
+    "@near-wallet-selector/wallet-connect": "^7.0.0",
+    "@next/font": "13.1.1",
+    "next": "13.1.1",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
   }
 }

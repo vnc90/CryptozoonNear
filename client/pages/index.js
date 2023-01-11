@@ -29,7 +29,7 @@ export default function Home() {
     }
     data()
   }, []);
-  console.log("useWeb3" , useWeb3)
+  console.log(useWeb3)
   return (
     <>
       <Head>
@@ -44,7 +44,17 @@ export default function Home() {
             Get started by editing&nbsp;
             <code className={styles.code}>pages/index.js</code>
           </p>
-        <button onClick = {() => useWeb3.wallet.signIn()} >Connect Wallet</button>
+        {
+          useWeb3.isSignedIn ? (
+            <button>{useWeb3.wallet.accountId}</button>
+            
+          ) : (
+            <button onClick = {() => useWeb3.wallet.signIn()} >Connect Wallet</button>
+
+          )
+        }
+        <button onClick = {() => useWeb3.wallet.signOut()} >Sign Out</button>
+
         </div>
 
       </main>
