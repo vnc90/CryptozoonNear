@@ -140,6 +140,15 @@ class Contract {
   }
 
   @view({})
+  get_all_zoan() {
+    let zoans = []
+    for(let i = 0; i<this.zoan_id; i++){
+      zoans.push(this.zoan_by_id.get(i.toString()))
+    }
+    return zoans
+  }
+
+  @view({})
   get_total_supply_zoan() {
     return this.total_supply_zoan
 }

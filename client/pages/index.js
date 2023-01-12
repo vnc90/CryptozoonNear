@@ -7,10 +7,11 @@ import styles from '../styles/Home.module.css'
 import { Contract } from '../near-interface'
 
 const inter = Inter({ subsets: ['latin'] })
-const CONTRACT_ID = 'dev-1672929464689-13020703704976'
+const CONTRACT_ID = 'dev-1673509114108-25943907946429'
 
 export default function Home() {
   const [ useWeb3, setUseWeb3] = useState({})
+  const [ totalZoan, settotalZoan] = useState({})
   useEffect(()=> {
     const data = async() => {
       const wallet = await new Wallet({createAccessKeyFor: CONTRACT_ID}) // AGGTR , network = "mainnet"
@@ -20,16 +21,25 @@ export default function Home() {
       })
 
       const isSignedIn = await wallet.startUp()
+      const totalZoan = await contract.get_all_zoan()
       setUseWeb3({
         wallet,
         contract,
-        isSignedIn
+        isSignedIn,
+        totalZoan
+        
       })
 
     }
     data()
   }, []);
+  function mint_zoan(){
+    let owner_id = 'vnc90.testnet'
+    useWeb3.contract.mint_zoan({owner_id})
+  }
+
   console.log(useWeb3)
+  console.log(useWeb3.totalZoan);
   return (
     <>
       <Head>
@@ -56,7 +66,21 @@ export default function Home() {
         <button onClick = {() => useWeb3.wallet.signOut()} >Sign Out</button>
 
         </div>
-
+        <div>
+          <form>
+            <table>
+              <tr>
+                <td>
+                  <label>Owner Wallet:</label>
+                </td>
+                <td>
+                  <input type = 'text' name = 'owner_id' id = 'owner_id'></input>
+                </td>
+                <td><button onClick={mint_zoan()}>Mint NFT</button></td>
+              </tr>
+            </table>
+          </form>
+        </div>
       </main>
     </>
   )

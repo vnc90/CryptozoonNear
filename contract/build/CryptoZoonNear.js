@@ -681,7 +681,7 @@ class Zoan {
     this.zoan_id = zoan_id, this.owner_id = owner_id, this.name = name, this.rare = rare, this.tribe = tribe, this.exp = exp, this.media_uri = media_uri, this.level = level;
   }
 }
-let Contract = (_dec = NearBindgen({}), _dec2 = initialize(), _dec3 = call({}), _dec4 = call({}), _dec5 = view(), _dec6 = view(), _dec7 = call({}), _dec8 = view(), _dec9 = view(), _dec(_class = (_class2 = class Contract {
+let Contract = (_dec = NearBindgen({}), _dec2 = initialize(), _dec3 = call({}), _dec4 = call({}), _dec5 = view(), _dec6 = view(), _dec7 = view(), _dec8 = view(), _dec9 = view(), _dec(_class = (_class2 = class Contract {
   //data zoan on account
   //data of Zoans
 
@@ -752,12 +752,10 @@ let Contract = (_dec = NearBindgen({}), _dec2 = initialize(), _dec3 = call({}), 
       return false;
     }
   }
-  nft_revoke({
-    account_id,
-    zoan_id
-  }) {
-    this.approved_account_ids.remove(zoan_id.toString(), account_id);
-  }
+  // @call({})
+  // nft_revoke({account_id, zoan_id}: {account_id: AccountId, zoan_id :number}){
+  //   this.approved_account_ids.remove(zoan_id.toString(),account_id);
+  // }
   // //transfer
   // @call({})
   // nft_transfer({receiver_id, zoan_id}: {receiver_id:string, zoan_id :number}){
@@ -769,10 +767,17 @@ let Contract = (_dec = NearBindgen({}), _dec2 = initialize(), _dec3 = call({}), 
   get_total_zoan() {
     return this.zoan_id;
   }
+  get_all_zoan() {
+    let zoans = [];
+    for (let i = 0; i < this.zoan_id; i++) {
+      zoans.push(this.zoan_by_id.get(i.toString()));
+    }
+    return zoans;
+  }
   get_total_supply_zoan() {
     return this.total_supply_zoan;
   }
-}, (_applyDecoratedDescriptor(_class2.prototype, "init", [_dec2], Object.getOwnPropertyDescriptor(_class2.prototype, "init"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "mint_zoan", [_dec3], Object.getOwnPropertyDescriptor(_class2.prototype, "mint_zoan"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "nft_approve", [_dec4], Object.getOwnPropertyDescriptor(_class2.prototype, "nft_approve"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "nft_token", [_dec5], Object.getOwnPropertyDescriptor(_class2.prototype, "nft_token"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "nft_is_approved", [_dec6], Object.getOwnPropertyDescriptor(_class2.prototype, "nft_is_approved"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "nft_revoke", [_dec7], Object.getOwnPropertyDescriptor(_class2.prototype, "nft_revoke"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_total_zoan", [_dec8], Object.getOwnPropertyDescriptor(_class2.prototype, "get_total_zoan"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_total_supply_zoan", [_dec9], Object.getOwnPropertyDescriptor(_class2.prototype, "get_total_supply_zoan"), _class2.prototype)), _class2)) || _class);
+}, (_applyDecoratedDescriptor(_class2.prototype, "init", [_dec2], Object.getOwnPropertyDescriptor(_class2.prototype, "init"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "mint_zoan", [_dec3], Object.getOwnPropertyDescriptor(_class2.prototype, "mint_zoan"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "nft_approve", [_dec4], Object.getOwnPropertyDescriptor(_class2.prototype, "nft_approve"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "nft_token", [_dec5], Object.getOwnPropertyDescriptor(_class2.prototype, "nft_token"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "nft_is_approved", [_dec6], Object.getOwnPropertyDescriptor(_class2.prototype, "nft_is_approved"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_total_zoan", [_dec7], Object.getOwnPropertyDescriptor(_class2.prototype, "get_total_zoan"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_all_zoan", [_dec8], Object.getOwnPropertyDescriptor(_class2.prototype, "get_all_zoan"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_total_supply_zoan", [_dec9], Object.getOwnPropertyDescriptor(_class2.prototype, "get_total_supply_zoan"), _class2.prototype)), _class2)) || _class);
 function get_total_supply_zoan() {
   const _state = Contract._getState();
   if (!_state && Contract._requireInit()) {
@@ -786,6 +791,19 @@ function get_total_supply_zoan() {
   const _result = _contract.get_total_supply_zoan(_args);
   if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(Contract._serialize(_result, true));
 }
+function get_all_zoan() {
+  const _state = Contract._getState();
+  if (!_state && Contract._requireInit()) {
+    throw new Error("Contract must be initialized");
+  }
+  const _contract = Contract._create();
+  if (_state) {
+    Contract._reconstruct(_contract, _state);
+  }
+  const _args = Contract._getArgs();
+  const _result = _contract.get_all_zoan(_args);
+  if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(Contract._serialize(_result, true));
+}
 function get_total_zoan() {
   const _state = Contract._getState();
   if (!_state && Contract._requireInit()) {
@@ -797,20 +815,6 @@ function get_total_zoan() {
   }
   const _args = Contract._getArgs();
   const _result = _contract.get_total_zoan(_args);
-  if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(Contract._serialize(_result, true));
-}
-function nft_revoke() {
-  const _state = Contract._getState();
-  if (!_state && Contract._requireInit()) {
-    throw new Error("Contract must be initialized");
-  }
-  const _contract = Contract._create();
-  if (_state) {
-    Contract._reconstruct(_contract, _state);
-  }
-  const _args = Contract._getArgs();
-  const _result = _contract.nft_revoke(_args);
-  Contract._saveToStorage(_contract);
   if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(Contract._serialize(_result, true));
 }
 function nft_is_approved() {
@@ -879,5 +883,5 @@ function init() {
   if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(Contract._serialize(_result, true));
 }
 
-export { get_total_supply_zoan, get_total_zoan, init, mint_zoan, nft_approve, nft_is_approved, nft_revoke, nft_token };
+export { get_all_zoan, get_total_supply_zoan, get_total_zoan, init, mint_zoan, nft_approve, nft_is_approved, nft_token };
 //# sourceMappingURL=CryptoZoonNear.js.map
